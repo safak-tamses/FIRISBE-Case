@@ -4,7 +4,6 @@ public record CustomerCreateRequest(
         String name,
         String lastName,
         String email,
-        String password,
-        String creditCardNumber
+        String password
 ) {
 }

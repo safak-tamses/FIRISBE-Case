@@ -1,8 +1,6 @@
 package com.firisbe.aspect;
 
-import com.firisbe.error.CustomerAlreadyExistsException;
-import com.firisbe.error.CustomerNotFoundException;
-import com.firisbe.error.UpdateCustomerRuntimeException;
+import com.firisbe.error.*;
 import com.firisbe.model.DTO.request.GenericExceptionResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,8 +16,16 @@ import java.time.LocalDateTime;
 @ControllerAdvice
 public class GenericException extends ResponseEntityExceptionHandler {
     @ExceptionHandler({
+            AccountNotFoundException.class,
+            AccountSaveException.class,
+            CreditCardAlreadyExist.class,
+            CreditCardNumberAlreadyExist.class,
             CustomerAlreadyExistsException.class,
             CustomerNotFoundException.class,
+            InvalidCreditCardNumberException.class,
+            InvalidEMailException.class,
+            PaymentFailedException.class,
+            TransferNotFoundException.class,
             UpdateCustomerRuntimeException.class
     })
     public ResponseEntity<Object> handleCustomException(Exception e) {

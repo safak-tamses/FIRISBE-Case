@@ -3,6 +3,7 @@ package com.firisbe.controller;
 import com.firisbe.aspect.GenericResponse;
 import com.firisbe.model.DTO.request.CustomerPaymentRequest;
 import com.firisbe.model.DTO.request.CustomerUpdateRequest;
+import com.firisbe.model.DTO.request.PaymentMethodRequest;
 import com.firisbe.model.DTO.response.CustomerResponse;
 import com.firisbe.model.DTO.response.PaymentResponse;
 import com.firisbe.model.Transfer;
@@ -29,14 +30,19 @@ public class CustomerController {
         return new ResponseEntity<>(service.updateCustomerForCustomers(token, request), HttpStatus.OK);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<GenericResponse<CustomerResponse>> readCustomer(@RequestHeader("Authorization") String token, @PathVariable(value = "id") Long id) {
-        return new ResponseEntity<>(service.readCustomerForCustomers(token, id), HttpStatus.OK);
+    @GetMapping("/profile")
+    public ResponseEntity<GenericResponse<CustomerResponse>> readCustomer(@RequestHeader("Authorization") String token) {
+        return new ResponseEntity<>(service.readCustomerForCustomers(token), HttpStatus.OK);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<GenericResponse<String>> deleteCustomer(@RequestHeader("Authorization") String token, @PathVariable(value = "id") Long id) {
-        return new ResponseEntity<>(service.deleteCustomerForCustomers(token, id), HttpStatus.OK);
+    @DeleteMapping
+    public ResponseEntity<GenericResponse<String>> deleteCustomer(@RequestHeader("Authorization") String token) {
+        return new ResponseEntity<>(service.deleteCustomerForCustomers(token), HttpStatus.OK);
+    }
+
+    @PostMapping("/payment/addPaymentMethod")
+    public ResponseEntity<GenericResponse<String>> addPaymentMethodForCustomer(@RequestHeader("Authorization") String token, @RequestBody PaymentMethodRequest request) {
+        return new ResponseEntity<>(service.addPaymentMethod(token, request), HttpStatus.OK);
     }
 
     @PostMapping("/payment")
@@ -51,16 +57,16 @@ public class CustomerController {
 
     @GetMapping("/payment/received/all")
     public ResponseEntity<GenericResponse<List<PaymentResponse>>> readAllReceivedPaymentForCustomer(@RequestHeader("Authorization") String token) {
-        return new ResponseEntity<>(transferService.readAllReceivedPaymentForCustomer(token),HttpStatus.OK);
+        return new ResponseEntity<>(transferService.readAllReceivedPaymentForCustomer(token), HttpStatus.OK);
     }
 
     @GetMapping("/payment/sent/all")
     public ResponseEntity<GenericResponse<List<PaymentResponse>>> readAllSentPaymentForCustomer(@RequestHeader("Authorization") String token) {
-        return new ResponseEntity<>(transferService.readAllSentPaymentForCustomer(token),HttpStatus.OK);
+        return new ResponseEntity<>(transferService.readAllSentPaymentForCustomer(token), HttpStatus.OK);
     }
 
     @GetMapping("/payment/all")
-    public ResponseEntity<GenericResponse<List<PaymentResponse>>> readAllPaymentForCustomer(@RequestHeader("Authorization") String token){
-    return new ResponseEntity<>(transferService.readAllPaymentForCustomer(token),HttpStatus.OK);
+    public ResponseEntity<GenericResponse<List<PaymentResponse>>> readAllPaymentForCustomer(@RequestHeader("Authorization") String token) {
+        return new ResponseEntity<>(transferService.readAllPaymentForCustomer(token), HttpStatus.OK);
     }
 }

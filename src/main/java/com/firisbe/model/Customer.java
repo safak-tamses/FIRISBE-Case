@@ -35,9 +35,9 @@ public class Customer implements UserDetails {
     private String email;
     private String password;
 
-    @JsonIgnore
-    @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
-    private Account account;
+    private String creditCardNumber;
+    private BigDecimal balance;
+
 
     @JsonIgnore
     @OneToMany(mappedBy = "sender")
@@ -91,6 +91,8 @@ public class Customer implements UserDetails {
                 ", role=" + role +
                 ", email='" + email + '\'' +
                 ", password='" + password + '\'' +
+                ", creditCardNumber='" + creditCardNumber + '\'' +
+                ", balance='" + balance + '\'' +
                 '}';
     }
 }

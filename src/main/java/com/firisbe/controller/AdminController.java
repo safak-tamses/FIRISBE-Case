@@ -1,6 +1,7 @@
 package com.firisbe.controller;
 
 import com.firisbe.aspect.GenericResponse;
+import com.firisbe.model.DTO.request.AdminCustomerUpdateRequest;
 import com.firisbe.model.DTO.request.CustomerUpdateRequest;
 import com.firisbe.model.DTO.response.CustomerResponse;
 import com.firisbe.model.DTO.response.PaymentResponse;
@@ -23,7 +24,7 @@ public class AdminController {
     private final TransferServiceImplementation transferService;
 
     @PutMapping
-    public ResponseEntity<GenericResponse<CustomerResponse>> updateCustomer(@RequestBody CustomerUpdateRequest request) {
+    public ResponseEntity<GenericResponse<CustomerResponse>> updateCustomer(@RequestBody AdminCustomerUpdateRequest request) {
         return new ResponseEntity<>(service.updateCustomerForAdmin(request), HttpStatus.OK);
     }
 

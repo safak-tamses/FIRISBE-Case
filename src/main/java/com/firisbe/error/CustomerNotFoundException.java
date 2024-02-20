@@ -1,8 +1,8 @@
 package com.firisbe.error;
 
-public class CustomerNotFoundException extends RuntimeException{
+public class CustomerNotFoundException extends RuntimeException {
     public CustomerNotFoundException(Throwable cause) {
-        super("Customer not found: ", cause);
+        super("Customer not found: ", cause.getCause());
     }
 
     public CustomerNotFoundException() {

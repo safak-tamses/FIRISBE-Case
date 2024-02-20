@@ -9,32 +9,14 @@ import org.springframework.kafka.config.TopicBuilder;
 public class KafkaTopicConfig {
 
     @Bean
-    public NewTopic dbCreate() {
-        return TopicBuilder.name("dbCreate")
+    public NewTopic success() {
+        return TopicBuilder.name("successful_logs")
                 .build();
     }
 
     @Bean
-    public NewTopic dbRead() {
-        return TopicBuilder.name("dbRead")
-                .build();
-    }
-
-    @Bean
-    public NewTopic dbUpdate() {
-        return TopicBuilder.name("dbUpdate")
-                .build();
-    }
-
-    @Bean
-    public NewTopic dbDelete() {
-        return TopicBuilder.name("dbDelete")
-                .build();
-    }
-
-    @Bean
-    public NewTopic paymentProcess() {
-        return TopicBuilder.name("payment-process")
+    public NewTopic error() {
+        return TopicBuilder.name("error_logs")
                 .build();
     }
 
@@ -43,7 +25,5 @@ public class KafkaTopicConfig {
         return TopicBuilder.name("payment-log")
                 .build();
     }
-
-
 }
 

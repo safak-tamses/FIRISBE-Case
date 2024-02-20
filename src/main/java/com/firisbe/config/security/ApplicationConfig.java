@@ -1,6 +1,5 @@
 package com.firisbe.config.security;
 
-import com.firisbe.model.Account;
 import com.firisbe.model.Enum.Role;
 import com.firisbe.model.Customer;
 import com.firisbe.repository.jpa.CustomerRepository;
@@ -51,21 +50,16 @@ public class ApplicationConfig {
     @Bean
     public String createAdminAccount() {
         if (repository.findCustomerByEmail("admin@admin.com").isEmpty()) {
-            Account account = Account.builder()
-                    .creditCardNumber(passwordEncoder().encode("0000-0000-0000-0000"))
-                    .balance(BigDecimal.valueOf(999))
-                    .build();
+
             Customer admin = Customer.builder()
                     .name("admin")
                     .lastName("admin")
                     .email("admin@admin.com")
                     .password(passwordEncoder().encode("admin"))
-                    .account(account)
                     .receivedTransfers(new ArrayList<>())
                     .sentTransfers(new ArrayList<>())
                     .role(Role.ROLE_ADMIN)
                     .build();
-            account.setCustomer(admin);
             repository.save(admin);
         }
         return "Ok";

@@ -5,6 +5,6 @@ public class AccountNotFoundException extends RuntimeException {
     }
 
     public AccountNotFoundException(Throwable cause) {
-        super("Account not found! " + cause);
+        super("Account not found! " + cause.getMessage());
     }
 }

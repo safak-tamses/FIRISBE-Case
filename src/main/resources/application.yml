@@ -28,11 +28,10 @@ spring:
 
 kafka:
   topic:
-    create: dbCreate
-    read: dbRead
-    update: dbUpdate
-    delete: dbDelete
-    payment_process: paymentProcess
-    payment_log: paymentLog
+    success: successful_logs
+    error: error_logs
+    paymentLog: payment_log
+    paymentProcess: payment_process
+
   groupId: groupId
 

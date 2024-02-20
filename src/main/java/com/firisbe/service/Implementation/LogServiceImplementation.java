@@ -14,7 +14,6 @@ public class LogServiceImplementation implements LogServiceInterface {
     private final LogRepository repo;
     private final SequenceGenerator sequenceGenerator;
 
-    @Override
     public void logAdding(String data) {
         long seq = sequenceGenerator.generateSequence(LogServiceImplementation.class);
 
@@ -27,19 +26,31 @@ public class LogServiceImplementation implements LogServiceInterface {
 
     @Override
     @KafkaListener(
-            topics = {"${kafka.topic.create}", "${kafka.topic.read}", "${kafka.topic.update}", "${kafka.topic.delete}"},
+            topics = {"${kafka.topic.success}"},
             groupId = "${kafka.groupId}"
     )
-    public void listener(String data) {
-        logAdding(data);
+    public void successLogListener(String message) {
+        // Başarılı log dinleyicisi için log kaydetme işlevi
+        logAdding("Success: " + message);
     }
 
     @Override
     @KafkaListener(
-            topics = {"${kafka.topic.payment_log}"},
+            topics = {"${kafka.topic.error}"},
             groupId = "${kafka.groupId}"
     )
-    public void paymentLog(String message) {
-        logAdding(message);
+    public void errorLogListener(String message) {
+        // Hata log dinleyicisi için log kaydetme işlevi
+        logAdding("Error: " + message);
+    }
+
+    @Override
+    @KafkaListener(
+            topics = {"${kafka.topic.paymentLog}"},
+            groupId = "${kafka.groupId}"
+    )
+    public void paymentLogListener(String message) {
+        // Ödeme log dinleyicisi için log kaydetme işlevi
+        logAdding("Payment Log: " + message);
     }
 }

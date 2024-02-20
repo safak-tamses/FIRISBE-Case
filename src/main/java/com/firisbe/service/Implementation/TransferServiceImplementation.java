@@ -4,7 +4,6 @@ import com.firisbe.aspect.GenericResponse;
 import com.firisbe.error.CustomerNotFoundException;
 import com.firisbe.error.PaymentFailedException;
 import com.firisbe.error.TransferNotFoundException;
-import com.firisbe.model.Account;
 import com.firisbe.model.Customer;
 import com.firisbe.model.DTO.request.CustomerPaymentRequest;
 import com.firisbe.model.DTO.response.PaymentResponse;
@@ -24,13 +23,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
 public class TransferServiceImplementation implements TransferServiceInterface {
     private final TransferRepository repo;
-    private final AccountServiceImplementation accountService;
     private final CustomerServiceImplementation customerService;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
@@ -38,16 +35,17 @@ public class TransferServiceImplementation implements TransferServiceInterface {
     @Override
     public GenericResponse<String> sendPaymentMessageToKafka(CustomerPaymentRequest request, String token) {
         try {
-            Account senderAccount = customerService.findCustomerToToken(token).getAccount();
-            Account receiveAccount = customerService.findCustomerByMail(request.receiveMail()).getAccount();
-            if (senderAccount != null && receiveAccount != null) {
+            Customer senderAccount = customerService.findCustomerToToken(token);
+            Customer receiveAccount = customerService.findCustomerByMail(request.receiveMail());
+
+            if (senderAccount != null && receiveAccount != null && senderAccount.getCreditCardNumber() != null && receiveAccount.getCreditCardNumber() != null) {
                 String message = senderAccount.getId() + "/" + receiveAccount.getId() + "/" + request.amount();
 
-                kafkaTemplate.send("paymentProcess", message);
+                kafkaTemplate.send("payment_process", message);
 
-                kafkaTemplate.send("paymentLog", "Payment transaction received successfully: " +
-                        senderAccount.getCustomer().getName() + " sent " + request.amount()
-                        + " amount of money to account with credit card number " + receiveAccount.getCustomer().getName() + " .");
+                kafkaTemplate.send("payment_log", "Payment transaction received successfully: " +
+                        senderAccount.getName() + " sent " + request.amount()
+                        + " amount of money to account with credit card number " + receiveAccount.getName() + " .");
 
                 return new GenericResponse<>("Payment request received successfully!", true);
 
@@ -62,7 +60,7 @@ public class TransferServiceImplementation implements TransferServiceInterface {
 
     @Override
     @KafkaListener(
-            topics = {"${kafka.topic.payment_process}"},
+            topics = {"${kafka.topic.paymentProcess}"},
             groupId = "${kafka.groupId}"
     )
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.SERIALIZABLE, rollbackFor = {PaymentFailedException.class})
@@ -71,25 +69,25 @@ public class TransferServiceImplementation implements TransferServiceInterface {
 
             String[] parts = request.split("/");
 
-            long senderAccountId = Long.parseLong(parts[0]);
-            long receiverAccountId = Long.parseLong(parts[1]);
+            long senderCustomerId = Long.parseLong(parts[0]);
+            long receiverCustomerId = Long.parseLong(parts[1]);
             BigDecimal amount = new BigDecimal(parts[2]);
 
 
-            Account senderAccount = accountService.findAccountById(senderAccountId);
-            Account receiveAccount = accountService.findAccountById(receiverAccountId);
-            Customer senderCustomer = senderAccount.getCustomer();
-            Customer receiveCustomer = receiveAccount.getCustomer();
+            Customer senderCustomer = customerService.findById(senderCustomerId);
+            Customer receiveCustomer = customerService.findById(receiverCustomerId);
 
-            if (senderAccount.getBalance().compareTo(amount) > 0) {
-                senderAccount.setBalance(
-                        senderAccount.getBalance().subtract(amount)
+            if (amount.compareTo(BigDecimal.valueOf(0)) > 0 && senderCustomer.getBalance().compareTo(amount) > 0) {
+                senderCustomer.setBalance(
+                        senderCustomer.getBalance().subtract(amount)
                 );
-                receiveAccount.setBalance(
-                        receiveAccount.getBalance().add(amount)
+                receiveCustomer.setBalance(
+                        receiveCustomer.getBalance().add(amount)
                 );
-                accountService.accountSave(senderAccount);
-                accountService.accountSave(receiveAccount);
+
+                customerService.saveCustomer(senderCustomer);
+                customerService.saveCustomer(receiveCustomer);
+
 
                 Transfer transfer = Transfer.builder()
                         .amount(amount)
@@ -102,16 +100,14 @@ public class TransferServiceImplementation implements TransferServiceInterface {
 //                receiveCustomer.getReceivedTransfers().add(transfer);
                 repo.save(transfer);
 
-                kafkaTemplate.send("payment-log", "Payment transaction received recorded: " +
-                        senderAccount.getCustomer().getName() + " sent " + amount
-                        + " amount of money to account with credit card number " + receiveAccount.getCustomer().getName() + " .");
+                kafkaTemplate.send("payment_log", "Payment transaction received recorded: " +
+                        senderCustomer.getName() + " sent " + amount
+                        + " amount of money to account with credit card number " + receiveCustomer.getName() + " .");
             } else {
                 throw new PaymentFailedException();
             }
-        } catch (PaymentFailedException e) {
-            throw new PaymentFailedException(e);
         } catch (Exception e) {
-            throw new RuntimeException("The cause of the error is unknown. Possible reason: ", e);
+            kafkaTemplate.send("error_logs", "PaymentFailedException: Failed payment Reason: " + e);
         }
     }
 
@@ -221,14 +217,19 @@ public class TransferServiceImplementation implements TransferServiceInterface {
                                 transfer.getTimestamp()
                         )
                 ).toList();
+                kafkaTemplate.send("payment_log", "Transfers listed successfully");
                 return new GenericResponse<>(response, true);
             } else {
+                kafkaTemplate.send("error_logs", "TransferNotFoundException: No transfers found");
                 throw new TransferNotFoundException();
             }
         } catch (TransferNotFoundException e) {
+            kafkaTemplate.send("error_logs", "TransferNotFoundException: " + e.getMessage());
             throw new TransferNotFoundException(e);
         } catch (Exception e) {
+            kafkaTemplate.send("error_logs", "RuntimeException: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
+
 }
