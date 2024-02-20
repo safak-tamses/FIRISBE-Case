@@ -4,6 +4,7 @@ import com.firisbe.aspect.GenericResponse;
 import com.firisbe.model.DTO.request.*;
 import com.firisbe.model.DTO.response.AuthResponse;
 import com.firisbe.model.DTO.response.CustomerResponse;
+import com.firisbe.model.DTO.response.MonthlyStatisticsResponse;
 
 import java.util.List;
 
@@ -19,4 +20,6 @@ public interface CustomerServiceInterface {
     public GenericResponse<AuthResponse> customerLogin(CustomerCredentials customerCredentials);
     public GenericResponse<AuthResponse> customerRegister(CustomerCreateRequest request);
     public GenericResponse<String> addPaymentMethod(String token, PaymentMethodRequest request);
+    public GenericResponse<MonthlyStatisticsResponse> monthlyStatisticsForCustomer(String token);
+    public GenericResponse<MonthlyStatisticsResponse> monthlyStatisticsForAdmin(Long id);
 }

@@ -4,6 +4,7 @@ import com.firisbe.aspect.GenericResponse;
 import com.firisbe.model.DTO.request.AdminCustomerUpdateRequest;
 import com.firisbe.model.DTO.request.CustomerUpdateRequest;
 import com.firisbe.model.DTO.response.CustomerResponse;
+import com.firisbe.model.DTO.response.MonthlyStatisticsResponse;
 import com.firisbe.model.DTO.response.PaymentResponse;
 import com.firisbe.service.Implementation.CustomerServiceImplementation;
 import com.firisbe.service.Implementation.TransferServiceImplementation;
@@ -56,6 +57,11 @@ public class AdminController {
     @GetMapping("/payment/all")
     public ResponseEntity<GenericResponse<List<PaymentResponse>>> readAllPaymentForAdmin() {
         return new ResponseEntity<>(transferService.readAllPaymentForAdmin(), HttpStatus.OK);
+    }
+
+    @GetMapping("/payment/statistics/{id}")
+    public ResponseEntity<GenericResponse<MonthlyStatisticsResponse>> monthlyStatistics(@PathVariable(value = "id") Long id) {
+        return new ResponseEntity<>(service.monthlyStatisticsForAdmin(id), HttpStatus.OK);
     }
 
 }

@@ -5,6 +5,7 @@ import com.firisbe.model.DTO.request.CustomerPaymentRequest;
 import com.firisbe.model.DTO.request.CustomerUpdateRequest;
 import com.firisbe.model.DTO.request.PaymentMethodRequest;
 import com.firisbe.model.DTO.response.CustomerResponse;
+import com.firisbe.model.DTO.response.MonthlyStatisticsResponse;
 import com.firisbe.model.DTO.response.PaymentResponse;
 import com.firisbe.model.Transfer;
 import com.firisbe.service.Implementation.CustomerServiceImplementation;
@@ -68,5 +69,10 @@ public class CustomerController {
     @GetMapping("/payment/all")
     public ResponseEntity<GenericResponse<List<PaymentResponse>>> readAllPaymentForCustomer(@RequestHeader("Authorization") String token) {
         return new ResponseEntity<>(transferService.readAllPaymentForCustomer(token), HttpStatus.OK);
+    }
+
+    @GetMapping("/payment/statistics")
+    public ResponseEntity<GenericResponse<MonthlyStatisticsResponse>> monthlyStatisticsForCustomer(@RequestHeader("Authorization") String token) {
+        return new ResponseEntity<>(service.monthlyStatisticsForCustomer(token), HttpStatus.OK);
     }
 }

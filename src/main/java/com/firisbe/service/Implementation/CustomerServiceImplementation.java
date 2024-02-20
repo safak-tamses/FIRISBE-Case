@@ -7,7 +7,9 @@ import com.firisbe.model.Customer;
 import com.firisbe.model.DTO.request.*;
 import com.firisbe.model.DTO.response.AuthResponse;
 import com.firisbe.model.DTO.response.CustomerResponse;
+import com.firisbe.model.DTO.response.MonthlyStatisticsResponse;
 import com.firisbe.model.Enum.Role;
+import com.firisbe.model.Transfer;
 import com.firisbe.repository.jpa.CustomerRepository;
 import com.firisbe.service.JwtService;
 import com.firisbe.service.Interface.CustomerServiceInterface;
@@ -23,9 +25,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -428,6 +434,134 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
             throw new RuntimeException(e.getMessage());
         }
 
+    }
+
+    @Override
+    public GenericResponse<MonthlyStatisticsResponse> monthlyStatisticsForCustomer(String token) {
+        try {
+            Customer customer = findCustomerToToken(token);
+
+            BigDecimal averageAmountReceived = BigDecimal.valueOf(0);
+            BigDecimal highestAmountReceived = BigDecimal.valueOf(0);
+            BigDecimal lowestAmountReceived = BigDecimal.valueOf(0);
+            int receivedCount = 0;
+            BigDecimal monthlyReceivedAmount = BigDecimal.valueOf(0);
+
+            BigDecimal averageAmountSent = BigDecimal.valueOf(0);
+            BigDecimal highestAmountSent = BigDecimal.valueOf(0);
+            BigDecimal lowestAmountSent = BigDecimal.valueOf(0);
+            int sentCount = 0;
+            BigDecimal monthlySentAmount = BigDecimal.valueOf(0);
+
+
+            if (!customer.getReceivedTransfers().isEmpty()) {
+                List<BigDecimal> receivedTransferAmounts = customer.getReceivedTransfers().stream()
+                        .map(Transfer::getAmount)
+                        .toList();
+
+                for (BigDecimal count : receivedTransferAmounts) {
+                    monthlyReceivedAmount = monthlyReceivedAmount.add(count);
+                }
+                averageAmountReceived = monthlyReceivedAmount.divide(BigDecimal.valueOf(receivedTransferAmounts.size()), 2, RoundingMode.HALF_UP);
+                highestAmountReceived = Collections.max(receivedTransferAmounts);
+                lowestAmountReceived = Collections.min(receivedTransferAmounts);
+                receivedCount = receivedTransferAmounts.size();
+            }
+            if (!customer.getSentTransfers().isEmpty()) {
+                List<BigDecimal> sentTransferAmounts = customer.getSentTransfers().stream()
+                        .map(Transfer::getAmount)
+                        .toList();
+
+                for (BigDecimal count : sentTransferAmounts) {
+                    monthlySentAmount = monthlySentAmount.add(count);
+                }
+                averageAmountSent = monthlySentAmount.divide(BigDecimal.valueOf(sentTransferAmounts.size()), 2, RoundingMode.HALF_UP);
+                highestAmountSent = Collections.max(sentTransferAmounts);
+                lowestAmountSent = Collections.min(sentTransferAmounts);
+                sentCount = sentTransferAmounts.size();
+            }
+
+
+            MonthlyStatisticsResponse response = new MonthlyStatisticsResponse(
+                    monthlyReceivedAmount,
+                    monthlySentAmount,
+                    receivedCount,
+                    sentCount,
+                    highestAmountSent,
+                    lowestAmountSent,
+                    highestAmountReceived,
+                    lowestAmountReceived,
+                    averageAmountSent,
+                    averageAmountReceived
+            );
+            return new GenericResponse<>(response, true);
+        } catch (Exception e) {
+            throw new RuntimeException();
+        }
+    }
+
+    @Override
+    public GenericResponse<MonthlyStatisticsResponse> monthlyStatisticsForAdmin(Long id) {
+        try {
+            Customer customer = repo.findById(id).orElseThrow(CustomerNotFoundException::new);
+
+            BigDecimal averageAmountReceived = BigDecimal.valueOf(0);
+            BigDecimal highestAmountReceived = BigDecimal.valueOf(0);
+            BigDecimal lowestAmountReceived = BigDecimal.valueOf(0);
+            int receivedCount = 0;
+            BigDecimal monthlyReceivedAmount = BigDecimal.valueOf(0);
+
+            BigDecimal averageAmountSent = BigDecimal.valueOf(0);
+            BigDecimal highestAmountSent = BigDecimal.valueOf(0);
+            BigDecimal lowestAmountSent = BigDecimal.valueOf(0);
+            int sentCount = 0;
+            BigDecimal monthlySentAmount = BigDecimal.valueOf(0);
+
+
+            if (!customer.getReceivedTransfers().isEmpty()) {
+                List<BigDecimal> receivedTransferAmounts = customer.getReceivedTransfers().stream()
+                        .map(Transfer::getAmount)
+                        .toList();
+
+                for (BigDecimal count : receivedTransferAmounts) {
+                    monthlyReceivedAmount = monthlyReceivedAmount.add(count);
+                }
+                averageAmountReceived = monthlyReceivedAmount.divide(BigDecimal.valueOf(receivedTransferAmounts.size()), 2, RoundingMode.HALF_UP);
+                highestAmountReceived = Collections.max(receivedTransferAmounts);
+                lowestAmountReceived = Collections.min(receivedTransferAmounts);
+                receivedCount = receivedTransferAmounts.size();
+            }
+            if (!customer.getSentTransfers().isEmpty()) {
+                List<BigDecimal> sentTransferAmounts = customer.getSentTransfers().stream()
+                        .map(Transfer::getAmount)
+                        .toList();
+
+                for (BigDecimal count : sentTransferAmounts) {
+                    monthlySentAmount = monthlySentAmount.add(count);
+                }
+                averageAmountSent = monthlySentAmount.divide(BigDecimal.valueOf(sentTransferAmounts.size()), 2, RoundingMode.HALF_UP);
+                highestAmountSent = Collections.max(sentTransferAmounts);
+                lowestAmountSent = Collections.min(sentTransferAmounts);
+                sentCount = sentTransferAmounts.size();
+            }
+
+
+            MonthlyStatisticsResponse response = new MonthlyStatisticsResponse(
+                    monthlyReceivedAmount,
+                    monthlySentAmount,
+                    receivedCount,
+                    sentCount,
+                    highestAmountSent,
+                    lowestAmountSent,
+                    highestAmountReceived,
+                    lowestAmountReceived,
+                    averageAmountSent,
+                    averageAmountReceived
+            );
+            return new GenericResponse<>(response, true);
+        } catch (Exception e) {
+            throw new RuntimeException();
+        }
     }
 
 
