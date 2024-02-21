@@ -32,6 +32,7 @@ public class TransferServiceImplementation implements TransferServiceInterface {
     private final KafkaTemplate<String, String> kafkaTemplate;
 
 
+
     @Override
     public GenericResponse<String> sendPaymentMessageToKafka(CustomerPaymentRequest request, String token) {
         try {
@@ -42,18 +43,19 @@ public class TransferServiceImplementation implements TransferServiceInterface {
                 String message = senderAccount.getId() + "/" + receiveAccount.getId() + "/" + request.amount();
 
                 kafkaTemplate.send("payment_process", message);
-
-                kafkaTemplate.send("payment_log", "Payment transaction received successfully: " + //
-                        senderAccount.getName() + " sent " + request.amount()
-                        + " amount of money to account with credit card number " + receiveAccount.getName() + " .");
-
+                kafkaTemplate.send("payment_log", "Payment request received successfully!");
                 return new GenericResponse<>("Payment request received successfully!", true);
 
             } else {
                 throw new PaymentFailedException();
             }
-        } catch (Exception e) {
+        } catch (PaymentFailedException e){
+            kafkaTemplate.send("error_logs", "PaymentFailedException: " + e.getMessage());
             throw new PaymentFailedException(e);
+        }
+        catch (Exception e) {
+            kafkaTemplate.send("error_logs", "RuntimeException: " + e.getMessage());
+            throw new RuntimeException(e);
         }
 
     }
@@ -100,14 +102,17 @@ public class TransferServiceImplementation implements TransferServiceInterface {
 //                receiveCustomer.getReceivedTransfers().add(transfer);
                 repo.save(transfer);
 
-                kafkaTemplate.send("payment_log", "Payment transaction received recorded: " +
-                        senderCustomer.getName() + " sent " + amount
-                        + " amount of money to account with credit card number " + receiveCustomer.getName() + " .");
+                kafkaTemplate.send("payment_log", "Payment processed successfully!");
             } else {
                 throw new PaymentFailedException();
             }
-        } catch (Exception e) {
+        }catch (PaymentFailedException e){
             kafkaTemplate.send("error_logs", "PaymentFailedException: Failed payment Reason: " + e);
+            throw new PaymentFailedException(e);
+        }
+        catch (Exception e) {
+            kafkaTemplate.send("error_logs", "RuntimeException: " + e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 
@@ -117,30 +122,31 @@ public class TransferServiceImplementation implements TransferServiceInterface {
         try {
             Transfer transfer = repo.findById(id).orElseThrow(TransferNotFoundException::new);
             Customer customer = customerService.findCustomerToToken(token);
-            if (transfer.getSender().getId().equals(customer.getId())) {
+            if (customer != null && transfer.getSender().getId().equals(customer.getId())) {
                 PaymentResponse response = new PaymentResponse(
                         transfer.getSender(),
                         transfer.getReceiver(),
                         transfer.getAmount(),
                         transfer.getTimestamp()
                 );
+                kafkaTemplate.send("payment_log", "Transfer read successfully");
                 return new GenericResponse<>(response, true);
             } else {
                 throw new CustomerNotFoundException();
             }
         } catch (CustomerNotFoundException e) {
+            kafkaTemplate.send("error_logs", "CustomerNotFoundException: " + e.getMessage());
             throw new CustomerNotFoundException(e);
         } catch (TransferNotFoundException e) {
+            kafkaTemplate.send("error_logs", "TransferNotFoundException: " + e.getMessage());
             throw new TransferNotFoundException(e);
         } catch (Exception e) {
+            kafkaTemplate.send("error_logs", "RuntimeException: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
 
-    @Override
-    public GenericResponse<List<PaymentResponse>> readAllReceivedPaymentForCustomer(String token) {
-        return new GenericResponse<>(listTransfer(token, "received"), true);
-    }
+
 
     @Override
     public GenericResponse<List<PaymentResponse>> readAllSentPaymentForCustomer(String token) {
@@ -186,6 +192,7 @@ public class TransferServiceImplementation implements TransferServiceInterface {
     public GenericResponse<PaymentResponse> readPaymentForAdmin(Long id) {
         try {
             Transfer transfer = repo.findById(id).orElseThrow(TransferNotFoundException::new);
+            kafkaTemplate.send("payment_log", "Transfer read successfully");
             return new GenericResponse<>(
                     new PaymentResponse(
                             transfer.getSender(),
@@ -195,8 +202,10 @@ public class TransferServiceImplementation implements TransferServiceInterface {
                     ), true
             );
         } catch (TransferNotFoundException e) {
+            kafkaTemplate.send("error_logs", "TransferNotFoundException: " + e.getMessage());
             throw new TransferNotFoundException(e);
         } catch (Exception e) {
+            kafkaTemplate.send("error_logs", "RuntimeException: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -205,6 +214,9 @@ public class TransferServiceImplementation implements TransferServiceInterface {
     public GenericResponse<List<PaymentResponse>> readAllPaymentForAdmin() {
         try {
             List<Transfer> transferList = repo.findAll();
+            if (transferList.isEmpty()) {
+                throw new TransferNotFoundException();
+            }
             List<PaymentResponse> response = transferList.stream()
                     .map(transfer -> new PaymentResponse(
                             transfer.getSender(),
@@ -212,11 +224,11 @@ public class TransferServiceImplementation implements TransferServiceInterface {
                             transfer.getAmount(),
                             transfer.getTimestamp()
                     )).toList();
+            kafkaTemplate.send("payment_log", "Transfers listed successfully");
             return new GenericResponse<>(response, true);
-        } catch (TransferNotFoundException e) {
-            throw new TransferNotFoundException(e);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            kafkaTemplate.send("error_logs", "TransferNotFoundException: " );
+            throw new TransferNotFoundException(e);
         }
     }
 
@@ -225,6 +237,9 @@ public class TransferServiceImplementation implements TransferServiceInterface {
         try {
             LocalDateTime referenceDate = LocalDateTime.now().minusMonths(monthOffset);
             List<Transfer> transferList = repo.findAll();
+            if (transferList.isEmpty()) {
+                throw new TransferNotFoundException();
+            }
             List<PaymentResponse> response = transferList.stream()
                     .map(transfer -> new PaymentResponse(
                             transfer.getSender(),
@@ -235,10 +250,13 @@ public class TransferServiceImplementation implements TransferServiceInterface {
             response = response.stream()
                     .filter(paymentResponse -> paymentResponse.timestamp().isAfter(referenceDate))
                     .toList();
+            kafkaTemplate.send("payment_log", "Transfers listed successfully");
             return new GenericResponse<>(response, true);
         } catch (TransferNotFoundException e) {
+            kafkaTemplate.send("error_logs", "TransferNotFoundException: " + e.getMessage());
             throw new TransferNotFoundException(e);
         } catch (Exception e) {
+            kafkaTemplate.send("error_logs", "RuntimeException: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -247,7 +265,7 @@ public class TransferServiceImplementation implements TransferServiceInterface {
      *     Bu method Customer 'ın transfer işlemlerini ne şekilde yapacağını belirtmek için oluşturulmuştur. 3 tane fonksiyonda benzer
      *     işlemler yapıldığı için yapıların sadeleştirilmesi için oluşturulmuştur.
      */
-    private List<PaymentResponse> listTransfer(String token, String value) {
+    public List<PaymentResponse> listTransfer(String token, String value) {
         try {
             Customer customer = customerService.findCustomerToToken(token);
             List<Transfer> transferList = new ArrayList<>();
@@ -261,28 +279,32 @@ public class TransferServiceImplementation implements TransferServiceInterface {
                 default -> {
                 }
             }
-            if (!transferList.isEmpty()) {
-                List<PaymentResponse> response = transferList.stream().map(
-                        transfer -> new PaymentResponse(
-                                transfer.getSender(),
-                                transfer.getReceiver(),
-                                transfer.getAmount(),
-                                transfer.getTimestamp()
-                        )
-                ).toList();
-                kafkaTemplate.send("payment_log", "Transfers listed successfully");
-                return response;
-            } else {
-                kafkaTemplate.send("error_logs", "TransferNotFoundException: No transfers found");
+            if (transferList.isEmpty()) {
+                kafkaTemplate.send("error_logs", "TransferNotFoundException: No transfer found for customer");
                 throw new TransferNotFoundException();
             }
+
+            List<PaymentResponse> response = transferList.stream().map(
+                    transfer -> new PaymentResponse(
+                            transfer.getSender(),
+                            transfer.getReceiver(),
+                            transfer.getAmount(),
+                            transfer.getTimestamp()
+                    )
+            ).toList();
+            kafkaTemplate.send("payment_log", "Transfers listed successfully");
+            return response;
         } catch (TransferNotFoundException e) {
             kafkaTemplate.send("error_logs", "TransferNotFoundException: " + e.getMessage());
-            throw new TransferNotFoundException(e);
+            throw e;
         } catch (Exception e) {
             kafkaTemplate.send("error_logs", "RuntimeException: " + e.getMessage());
             throw new RuntimeException(e);
         }
+    }
+    @Override
+    public GenericResponse<List<PaymentResponse>> readAllReceivedPaymentForCustomer(String token) {
+        return new GenericResponse<>(listTransfer(token, "received"), true);
     }
 
 }

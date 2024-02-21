@@ -19,20 +19,17 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
+
 
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+
 
 @Service
 @AllArgsConstructor
@@ -51,8 +48,10 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
             final String customerName = jwtService.extractUsername(token);
             return repo.findCustomerByEmail(customerName).orElseThrow(CustomerNotFoundException::new);
         } catch (CustomerNotFoundException e) {
+            kafkaTemplate.send("error_logs", "CustomerNotFound: Failed to find the user in the database. Reason: " + e.getMessage());
             throw new CustomerNotFoundException(e);
         } catch (Exception e) {
+            kafkaTemplate.send("error_logs", "GeneralError: Failed to find the user in the database. Reason: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -61,8 +60,10 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
         try {
             return repo.findCustomerByEmail(mail).orElseThrow(CustomerNotFoundException::new);
         } catch (CustomerNotFoundException e) {
+            kafkaTemplate.send("error_logs", "CustomerNotFound: Failed to find the user in the database. Reason: " + e.getMessage());
             throw new CustomerNotFoundException(e);
         } catch (Exception e) {
+            kafkaTemplate.send("error_logs", "GeneralError: Failed to find the user in the database. Reason: " + e.getMessage());
             throw new RuntimeException("Someting gone wrong", e);
         }
     }
@@ -71,8 +72,10 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
         try {
             return repo.findById(id).orElseThrow(CustomerNotFoundException::new);
         } catch (CustomerNotFoundException e) {
+            kafkaTemplate.send("error_logs", "CustomerNotFound: Failed to find the user in the database. Reason: " + e.getMessage());
             throw new CustomerNotFoundException(e);
         } catch (Exception e) {
+            kafkaTemplate.send("error_logs", "GeneralError: Failed to find the user in the database. Reason: " + e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -81,6 +84,7 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
         try {
             repo.save(customer);
         } catch (Exception e) {
+            kafkaTemplate.send("error_logs", "GeneralError: Failed to save the user in the database. Reason: " + e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -223,7 +227,7 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
             kafkaTemplate.send("error_logs", "InvalidCreditCardNumber: Failed to update the user named " + request.name() + " in the database. Reason: " + e.getMessage());
             throw new InvalidCreditCardNumberException(e);
         } catch (Exception e) {
-            kafkaTemplate.send("error_logs", "UpdateCustomerRuntime: Failed to update the user named " + request.name() + " in the database. Reason: " + e.getMessage());
+            kafkaTemplate.send("error_logs", "GeneralError: Failed to update the user named " + request.name() + " in the database. Reason: " + e.getMessage());
             throw new UpdateCustomerRuntimeException(e);
         }
     }
@@ -268,10 +272,10 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
     public GenericResponse<List<CustomerResponse>> readAllForAdmin() {
         try {
             List<CustomerResponse> responseList = repo.findAll().stream().map(customer -> new CustomerResponse(customer.getName(), customer.getLastName(), customer.getEmail())).toList();
-            kafkaTemplate.send("successful_logs", "All data in the database was retrieved successfully");
+            kafkaTemplate.send("successful_logs", "All data has been successfully read from the database");
             return new GenericResponse<>(responseList, true);
         } catch (Exception e) {
-            kafkaTemplate.send("error_logs", "An error was encountered while retrieving all data from the database. The reason is: " + e.getMessage());
+            kafkaTemplate.send("error_logs", "An error was encountered while reading all data from the database. The reason for the error is: " + e.getMessage());
             throw new RuntimeException();
         }
     }
@@ -340,10 +344,10 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
             AuthResponse response = new AuthResponse(
                     "Login successful", jwtToken
             );
-            kafkaTemplate.send("successful_logs", "Login successful.");
+            kafkaTemplate.send("successful_logs", "The user named " + customer.getName() + " has been successfully logged in to the database");
             return new GenericResponse<>(response, true);
         } catch (Exception e) {
-            kafkaTemplate.send("error_logs", "Login failed.");
+            kafkaTemplate.send("error_logs", "An error occurred while logging in to the database. The reason for the error is: " + e.getMessage());
             throw new RuntimeException();
         }
     }
@@ -380,8 +384,8 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
 
                 AuthResponse response = new AuthResponse("Register successful", jwtToken
                 );
-
                 kafkaTemplate.send("successful_logs", "The user named " + request.name() + " has been successfully registered in the database");
+
                 return new GenericResponse<>(response, true);
             } else {
                 throw new CreditCardAlreadyExist();
@@ -394,16 +398,16 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
 //            }
 
         } catch (CustomerAlreadyExistsException e) {
-            kafkaTemplate.send("error_logs", "CustomerAlreadyExistsException: " + e.getMessage());
+            kafkaTemplate.send("error_logs", "CustomerAlreadyExists: " + e.getMessage());
             throw new CustomerAlreadyExistsException(e);
         } catch (InvalidCreditCardNumberException e) {
-            kafkaTemplate.send("error_logs", "InvalidCreditCardNumberException: " + e.getMessage());
+            kafkaTemplate.send("error_logs", "InvalidCreditCardNumber: " + e.getMessage());
             throw new InvalidCreditCardNumberException(e);
         } catch (CreditCardAlreadyExist e) {
             kafkaTemplate.send("error_logs", "CreditCardAlreadyExist: " + e.getMessage());
             throw new CreditCardAlreadyExist(e);
         } catch (Exception e) {
-            kafkaTemplate.send("error_logs", "An unknown error occurred: " + e.getMessage());
+            kafkaTemplate.send("error_logs", "GeneralError: " + e.getMessage());
             throw new RuntimeException("An unknown error occurred: ", e.getCause());
         }
 
@@ -426,12 +430,16 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
                 c.setBalance(BigDecimal.valueOf(10000));
             }
             repo.save(c);
+            kafkaTemplate.send("successful_logs", "The user named " + c.getName() + " has been successfully added a payment method in the database");
             return new GenericResponse<>("Payment method added successfully", true);
         } catch (CreditCardAlreadyExist e) {
+            kafkaTemplate.send("error_logs", "CreditCardAlreadyExist: " + e.getMessage());
             throw new CreditCardAlreadyExist(e);
         } catch (CreditCardNumberAlreadyExist e) {
+            kafkaTemplate.send("error_logs", "CreditCardNumberAlreadyExist: " + e.getMessage());
             throw new CreditCardNumberAlreadyExist(e);
         } catch (Exception e) {
+            kafkaTemplate.send("error_logs", "GeneralError: " + e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
 
@@ -505,8 +513,10 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
                     averageAmountReceived,
                     monthOffset
             );
+            kafkaTemplate.send("successful_logs", "The user named " + customer.getName() + " has been successfully read monthly statistics in the database");
             return new GenericResponse<>(response, true);
         } catch (Exception e) {
+            kafkaTemplate.send("error_logs", "GeneralError: " + e.getMessage());
             throw new RuntimeException();
         }
     }
@@ -533,11 +543,11 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
 
             List<Transfer> receivedTransfers = customer.getReceivedTransfers().stream()
                     .filter(transfer -> transfer.getTimestamp().isAfter(referenceDate))
-                    .collect(Collectors.toList());
+                    .toList();
 
             List<Transfer> sentTransfers = customer.getSentTransfers().stream()
                     .filter(transfer -> transfer.getTimestamp().isAfter(referenceDate))
-                    .collect(Collectors.toList());
+                    .toList();
 
             if (!receivedTransfers.isEmpty()) {
                 List<BigDecimal> receivedTransferAmounts = receivedTransfers.stream()
@@ -579,8 +589,10 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
                     averageAmountReceived,
                     monthOffset
             );
+            kafkaTemplate.send("successful_logs", "The user named " + customer.getName() + " has been successfully read monthly statistics in the database");
             return new GenericResponse<>(response, true);
         } catch (Exception e) {
+            kafkaTemplate.send("error_logs", "GeneralError: " + e.getMessage());
             throw new RuntimeException();
         }
     }

@@ -13,7 +13,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
         contact = @Contact(
                 name = "Şafak Tamses",
                 email = "safak.tamses@gmail.com",
-                url = ""
+                url = "https://safaktamses.com/"
         ),
         description = "FIRISBE Java developer mülakatı için hazırlanmış uygulama. Proje gereksinimlerine github üzerinden ulaşabilirsiniz.",
         title = "Secure payment application",
