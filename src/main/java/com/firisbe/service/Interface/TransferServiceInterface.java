@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface TransferServiceInterface {
     public GenericResponse<String> sendPaymentMessageToKafka(CustomerPaymentRequest request, String token);
+
     public void processPaymentMessageFromKafka(String request);
 
     GenericResponse<PaymentResponse> readPaymentForCustomer(String token, Long id);
@@ -19,8 +20,15 @@ public interface TransferServiceInterface {
 
     GenericResponse<List<PaymentResponse>> readAllPaymentForCustomer(String token);
 
+    GenericResponse<List<PaymentResponse>> readAllReceivedPaymentForCustomer(String token, int monthOffset);
+
+    GenericResponse<List<PaymentResponse>> readAllSentPaymentForCustomer(String token, int monthOffset);
+
+    GenericResponse<List<PaymentResponse>> readAllPaymentForCustomer(String token, int monthOffset);
+
     GenericResponse<PaymentResponse> readPaymentForAdmin(Long id);
 
     GenericResponse<List<PaymentResponse>> readAllPaymentForAdmin();
+    GenericResponse<List<PaymentResponse>> readAllPaymentForAdmin(int monthOffset);
 
 }

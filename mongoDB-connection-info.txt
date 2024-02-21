@@ -1,0 +1,3 @@
+Address: http://localhost:8081/db/crud/log
+Username: admin
+Password: 1234

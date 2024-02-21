@@ -41,7 +41,7 @@ public class CustomerController {
         return new ResponseEntity<>(service.deleteCustomerForCustomers(token), HttpStatus.OK);
     }
 
-    @PostMapping("/payment/addPaymentMethod")
+    @PostMapping("/payment/add-payment-method")
     public ResponseEntity<GenericResponse<String>> addPaymentMethodForCustomer(@RequestHeader("Authorization") String token, @RequestBody PaymentMethodRequest request) {
         return new ResponseEntity<>(service.addPaymentMethod(token, request), HttpStatus.OK);
     }
@@ -51,8 +51,8 @@ public class CustomerController {
         return new ResponseEntity<>(transferService.sendPaymentMessageToKafka(request, token), HttpStatus.OK);
     }
 
-    @GetMapping("/payment/{id}")
-    public ResponseEntity<GenericResponse<PaymentResponse>> readPaymentForCustomer(@RequestHeader("Authorization") String token, @PathVariable(value = "id") Long id) {
+    @GetMapping("/payment/{paymentId}")
+    public ResponseEntity<GenericResponse<PaymentResponse>> readPaymentForCustomer(@RequestHeader("Authorization") String token, @PathVariable(value = "paymentId") Long id) {
         return new ResponseEntity<>(transferService.readPaymentForCustomer(token, id), HttpStatus.OK);
     }
 
@@ -71,8 +71,36 @@ public class CustomerController {
         return new ResponseEntity<>(transferService.readAllPaymentForCustomer(token), HttpStatus.OK);
     }
 
+    @GetMapping("/payment/received")
+    public ResponseEntity<GenericResponse<List<PaymentResponse>>> readAllReceivedPaymentForCustomer(
+            @RequestHeader("Authorization") String token,
+            @RequestParam("monthlyOffset") int monthOffset
+    ) {
+        return new ResponseEntity<>(transferService.readAllReceivedPaymentForCustomer(token, monthOffset), HttpStatus.OK);
+    }
+
+    @GetMapping("/payment/sent")
+    public ResponseEntity<GenericResponse<List<PaymentResponse>>> readAllSentPaymentForCustomer(
+            @RequestHeader("Authorization") String token,
+            @RequestParam("monthlyOffset") int monthOffset
+    ) {
+        return new ResponseEntity<>(transferService.readAllSentPaymentForCustomer(token, monthOffset), HttpStatus.OK);
+    }
+
+    @GetMapping("/payment/all-with-time-offset")
+    public ResponseEntity<GenericResponse<List<PaymentResponse>>> readAllPaymentForCustomer(
+            @RequestHeader("Authorization") String token,
+            @RequestParam("monthlyOffset") int monthOffset
+    ) {
+        return new ResponseEntity<>(transferService.readAllPaymentForCustomer(token, monthOffset), HttpStatus.OK);
+    }
+
     @GetMapping("/payment/statistics")
-    public ResponseEntity<GenericResponse<MonthlyStatisticsResponse>> monthlyStatisticsForCustomer(@RequestHeader("Authorization") String token) {
-        return new ResponseEntity<>(service.monthlyStatisticsForCustomer(token), HttpStatus.OK);
+    public ResponseEntity<GenericResponse<MonthlyStatisticsResponse>> monthlyStatisticsForCustomer
+            (
+                    @RequestHeader("Authorization") String token,
+                    @RequestParam("monthlyOffset") int monthOffset
+            ) {
+        return new ResponseEntity<>(service.monthlyStatisticsForCustomer(token, monthOffset), HttpStatus.OK);
     }
 }

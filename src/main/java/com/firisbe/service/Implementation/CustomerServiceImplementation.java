@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -349,7 +350,6 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
 
     /* Bu method kullanıcının hesap oluşturmasını sağlıyor. */
     @Override
-    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.SERIALIZABLE)
     public GenericResponse<AuthResponse> customerRegister(CustomerCreateRequest request) {
         try {
             //Email adresiyle kayıtlı bir hesap var mı ?
@@ -409,6 +409,7 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
 
     }
 
+    /* Kullanıcının ödeme yöntemi eklemesini sağlayan method */
     @Override
     public GenericResponse<String> addPaymentMethod(String token, PaymentMethodRequest request) {
         try {
@@ -436,11 +437,14 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
 
     }
 
+    /* Tüm veriye göre verilen ay ofsetinin değerine göre istatislik çıkaran fonksiyon */
     @Override
-    public GenericResponse<MonthlyStatisticsResponse> monthlyStatisticsForCustomer(String token) {
+    public GenericResponse<MonthlyStatisticsResponse> monthlyStatisticsForCustomer(String token, int monthOffset) {
         try {
             Customer customer = findCustomerToToken(token);
 
+            LocalDateTime referenceDate = LocalDateTime.now().minusMonths(monthOffset);
+
             BigDecimal averageAmountReceived = BigDecimal.valueOf(0);
             BigDecimal highestAmountReceived = BigDecimal.valueOf(0);
             BigDecimal lowestAmountReceived = BigDecimal.valueOf(0);
@@ -453,9 +457,16 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
             int sentCount = 0;
             BigDecimal monthlySentAmount = BigDecimal.valueOf(0);
 
+            List<Transfer> receivedTransfers = customer.getReceivedTransfers().stream()
+                    .filter(transfer -> transfer.getTimestamp().isAfter(referenceDate))
+                    .toList();
 
-            if (!customer.getReceivedTransfers().isEmpty()) {
-                List<BigDecimal> receivedTransferAmounts = customer.getReceivedTransfers().stream()
+            List<Transfer> sentTransfers = customer.getSentTransfers().stream()
+                    .filter(transfer -> transfer.getTimestamp().isAfter(referenceDate))
+                    .toList();
+
+            if (!receivedTransfers.isEmpty()) {
+                List<BigDecimal> receivedTransferAmounts = receivedTransfers.stream()
                         .map(Transfer::getAmount)
                         .toList();
 
@@ -467,8 +478,8 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
                 lowestAmountReceived = Collections.min(receivedTransferAmounts);
                 receivedCount = receivedTransferAmounts.size();
             }
-            if (!customer.getSentTransfers().isEmpty()) {
-                List<BigDecimal> sentTransferAmounts = customer.getSentTransfers().stream()
+            if (!sentTransfers.isEmpty()) {
+                List<BigDecimal> sentTransferAmounts = sentTransfers.stream()
                         .map(Transfer::getAmount)
                         .toList();
 
@@ -481,7 +492,6 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
                 sentCount = sentTransferAmounts.size();
             }
 
-
             MonthlyStatisticsResponse response = new MonthlyStatisticsResponse(
                     monthlyReceivedAmount,
                     monthlySentAmount,
@@ -492,7 +502,8 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
                     highestAmountReceived,
                     lowestAmountReceived,
                     averageAmountSent,
-                    averageAmountReceived
+                    averageAmountReceived,
+                    monthOffset
             );
             return new GenericResponse<>(response, true);
         } catch (Exception e) {
@@ -500,11 +511,14 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
         }
     }
 
+    /* Admin hesabının istatistik verisi çıkarması  */
     @Override
-    public GenericResponse<MonthlyStatisticsResponse> monthlyStatisticsForAdmin(Long id) {
+    public GenericResponse<MonthlyStatisticsResponse> monthlyStatisticsForAdmin(Long id, int monthOffset) {
         try {
             Customer customer = repo.findById(id).orElseThrow(CustomerNotFoundException::new);
 
+            LocalDateTime referenceDate = LocalDateTime.now().minusMonths(monthOffset);
+
             BigDecimal averageAmountReceived = BigDecimal.valueOf(0);
             BigDecimal highestAmountReceived = BigDecimal.valueOf(0);
             BigDecimal lowestAmountReceived = BigDecimal.valueOf(0);
@@ -517,9 +531,16 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
             int sentCount = 0;
             BigDecimal monthlySentAmount = BigDecimal.valueOf(0);
 
+            List<Transfer> receivedTransfers = customer.getReceivedTransfers().stream()
+                    .filter(transfer -> transfer.getTimestamp().isAfter(referenceDate))
+                    .collect(Collectors.toList());
 
-            if (!customer.getReceivedTransfers().isEmpty()) {
-                List<BigDecimal> receivedTransferAmounts = customer.getReceivedTransfers().stream()
+            List<Transfer> sentTransfers = customer.getSentTransfers().stream()
+                    .filter(transfer -> transfer.getTimestamp().isAfter(referenceDate))
+                    .collect(Collectors.toList());
+
+            if (!receivedTransfers.isEmpty()) {
+                List<BigDecimal> receivedTransferAmounts = receivedTransfers.stream()
                         .map(Transfer::getAmount)
                         .toList();
 
@@ -531,8 +552,8 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
                 lowestAmountReceived = Collections.min(receivedTransferAmounts);
                 receivedCount = receivedTransferAmounts.size();
             }
-            if (!customer.getSentTransfers().isEmpty()) {
-                List<BigDecimal> sentTransferAmounts = customer.getSentTransfers().stream()
+            if (!sentTransfers.isEmpty()) {
+                List<BigDecimal> sentTransferAmounts = sentTransfers.stream()
                         .map(Transfer::getAmount)
                         .toList();
 
@@ -545,7 +566,6 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
                 sentCount = sentTransferAmounts.size();
             }
 
-
             MonthlyStatisticsResponse response = new MonthlyStatisticsResponse(
                     monthlyReceivedAmount,
                     monthlySentAmount,
@@ -556,13 +576,16 @@ public class CustomerServiceImplementation implements CustomerServiceInterface {
                     highestAmountReceived,
                     lowestAmountReceived,
                     averageAmountSent,
-                    averageAmountReceived
+                    averageAmountReceived,
+                    monthOffset
             );
             return new GenericResponse<>(response, true);
         } catch (Exception e) {
             throw new RuntimeException();
         }
     }
+
+
 
 
 }

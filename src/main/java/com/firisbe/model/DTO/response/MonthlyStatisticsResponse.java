@@ -12,6 +12,7 @@ public record MonthlyStatisticsResponse(
         BigDecimal highestAmountReceived,
         BigDecimal lowestAmountReceived,
         BigDecimal averageAmountSent,
-        BigDecimal averageAmountReceived
+        BigDecimal averageAmountReceived,
+        Integer offsetDate
 ) {
 }

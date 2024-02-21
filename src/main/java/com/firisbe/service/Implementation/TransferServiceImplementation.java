@@ -139,17 +139,47 @@ public class TransferServiceImplementation implements TransferServiceInterface {
 
     @Override
     public GenericResponse<List<PaymentResponse>> readAllReceivedPaymentForCustomer(String token) {
-        return listTransfer(token, "received");
+        return new GenericResponse<>(listTransfer(token, "received"), true);
     }
 
     @Override
     public GenericResponse<List<PaymentResponse>> readAllSentPaymentForCustomer(String token) {
-        return listTransfer(token, "sent");
+        return new GenericResponse<>(listTransfer(token, "sent"), true);
     }
 
     @Override
     public GenericResponse<List<PaymentResponse>> readAllPaymentForCustomer(String token) {
-        return listTransfer(token, "all");
+        return new GenericResponse<>(listTransfer(token, "all"), true);
+    }
+
+    @Override
+    public GenericResponse<List<PaymentResponse>> readAllReceivedPaymentForCustomer(String token, int monthOffset) {
+        LocalDateTime referenceDate = LocalDateTime.now().minusMonths(monthOffset);
+        List<PaymentResponse> filteredList = listTransfer(token, "received");
+        filteredList = filteredList.stream()
+                .filter(paymentResponse -> paymentResponse.timestamp().isAfter(referenceDate))
+                .toList();
+        return new GenericResponse<>(filteredList, true);
+    }
+
+    @Override
+    public GenericResponse<List<PaymentResponse>> readAllSentPaymentForCustomer(String token, int monthOffset) {
+        LocalDateTime referenceDate = LocalDateTime.now().minusMonths(monthOffset);
+        List<PaymentResponse> filteredList = listTransfer(token, "sent");
+        filteredList = filteredList.stream()
+                .filter(paymentResponse -> paymentResponse.timestamp().isAfter(referenceDate))
+                .toList();
+        return new GenericResponse<>(filteredList, true);
+    }
+
+    @Override
+    public GenericResponse<List<PaymentResponse>> readAllPaymentForCustomer(String token, int monthOffset) {
+        LocalDateTime referenceDate = LocalDateTime.now().minusMonths(monthOffset);
+        List<PaymentResponse> filteredList = listTransfer(token, "all");
+        filteredList = filteredList.stream()
+                .filter(paymentResponse -> paymentResponse.timestamp().isAfter(referenceDate))
+                .toList();
+        return new GenericResponse<>(filteredList, true);
     }
 
     @Override
@@ -190,11 +220,34 @@ public class TransferServiceImplementation implements TransferServiceInterface {
         }
     }
 
+    @Override
+    public GenericResponse<List<PaymentResponse>> readAllPaymentForAdmin(int monthOffset) {
+        try {
+            LocalDateTime referenceDate = LocalDateTime.now().minusMonths(monthOffset);
+            List<Transfer> transferList = repo.findAll();
+            List<PaymentResponse> response = transferList.stream()
+                    .map(transfer -> new PaymentResponse(
+                            transfer.getSender(),
+                            transfer.getReceiver(),
+                            transfer.getAmount(),
+                            transfer.getTimestamp()
+                    )).toList();
+            response = response.stream()
+                    .filter(paymentResponse -> paymentResponse.timestamp().isAfter(referenceDate))
+                    .toList();
+            return new GenericResponse<>(response, true);
+        } catch (TransferNotFoundException e) {
+            throw new TransferNotFoundException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /*
      *     Bu method Customer 'ın transfer işlemlerini ne şekilde yapacağını belirtmek için oluşturulmuştur. 3 tane fonksiyonda benzer
      *     işlemler yapıldığı için yapıların sadeleştirilmesi için oluşturulmuştur.
      */
-    private GenericResponse<List<PaymentResponse>> listTransfer(String token, String value) {
+    private List<PaymentResponse> listTransfer(String token, String value) {
         try {
             Customer customer = customerService.findCustomerToToken(token);
             List<Transfer> transferList = new ArrayList<>();
@@ -218,7 +271,7 @@ public class TransferServiceImplementation implements TransferServiceInterface {
                         )
                 ).toList();
                 kafkaTemplate.send("payment_log", "Transfers listed successfully");
-                return new GenericResponse<>(response, true);
+                return response;
             } else {
                 kafkaTemplate.send("error_logs", "TransferNotFoundException: No transfers found");
                 throw new TransferNotFoundException();

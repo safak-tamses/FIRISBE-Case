@@ -29,8 +29,8 @@ public class AdminController {
         return new ResponseEntity<>(service.updateCustomerForAdmin(request), HttpStatus.OK);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<GenericResponse<CustomerResponse>> readCustomer(@PathVariable(value = "id") Long id) {
+    @GetMapping("/{customerId}")
+    public ResponseEntity<GenericResponse<CustomerResponse>> readCustomer(@PathVariable(value = "customerId") Long id) {
         return new ResponseEntity<>(service.readCustomerForAdmin(id), HttpStatus.OK);
     }
 
@@ -39,8 +39,8 @@ public class AdminController {
         return new ResponseEntity<>(service.readAllForAdmin(), HttpStatus.OK);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<GenericResponse<String>> deleteCustomer(@PathVariable(value = "id") Long id) {
+    @DeleteMapping("/{customerId}")
+    public ResponseEntity<GenericResponse<String>> deleteCustomer(@PathVariable(value = "customerId") Long id) {
         return new ResponseEntity<>(service.deleteCustomerForAdmin(id), HttpStatus.OK);
     }
 
@@ -49,8 +49,8 @@ public class AdminController {
         return new ResponseEntity<>(service.deleteAllForAdmin(), HttpStatus.OK);
     }
 
-    @GetMapping("/payment/{id}")
-    public ResponseEntity<GenericResponse<PaymentResponse>> readPaymentForAdmin(@PathVariable(value = "id") Long id) {
+    @GetMapping("/payment/{paymentId}")
+    public ResponseEntity<GenericResponse<PaymentResponse>> readPaymentForAdmin(@PathVariable(value = "paymentId") Long id) {
         return new ResponseEntity<>(transferService.readPaymentForAdmin(id), HttpStatus.OK);
     }
 
@@ -59,9 +59,20 @@ public class AdminController {
         return new ResponseEntity<>(transferService.readAllPaymentForAdmin(), HttpStatus.OK);
     }
 
-    @GetMapping("/payment/statistics/{id}")
-    public ResponseEntity<GenericResponse<MonthlyStatisticsResponse>> monthlyStatistics(@PathVariable(value = "id") Long id) {
-        return new ResponseEntity<>(service.monthlyStatisticsForAdmin(id), HttpStatus.OK);
+    @GetMapping("/payment/all-with-time-offset")
+    public ResponseEntity<GenericResponse<List<PaymentResponse>>> readAllPaymentForAdmin(
+            @RequestParam("monthlyOffset") int monthOffset
+    ) {
+        return new ResponseEntity<>(transferService.readAllPaymentForAdmin(monthOffset), HttpStatus.OK);
+    }
+
+    @GetMapping("/payment/statistics/{customerId}")
+    public ResponseEntity<GenericResponse<MonthlyStatisticsResponse>> monthlyStatistics
+            (
+                    @PathVariable("customerId") Long id,
+                    @RequestParam("monthlyOffset") int monthOffset
+            ) {
+        return new ResponseEntity<>(service.monthlyStatisticsForAdmin(id, monthOffset), HttpStatus.OK);
     }
 
 }
