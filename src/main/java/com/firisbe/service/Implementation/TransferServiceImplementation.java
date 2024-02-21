@@ -43,7 +43,7 @@ public class TransferServiceImplementation implements TransferServiceInterface {
 
                 kafkaTemplate.send("payment_process", message);
 
-                kafkaTemplate.send("payment_log", "Payment transaction received successfully: " +
+                kafkaTemplate.send("payment_log", "Payment transaction received successfully: " + //
                         senderAccount.getName() + " sent " + request.amount()
                         + " amount of money to account with credit card number " + receiveAccount.getName() + " .");
 

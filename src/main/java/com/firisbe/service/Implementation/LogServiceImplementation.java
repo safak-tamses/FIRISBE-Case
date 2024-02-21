@@ -8,6 +8,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
+
 @Service
 @AllArgsConstructor
 public class LogServiceImplementation implements LogServiceInterface {
@@ -19,8 +21,10 @@ public class LogServiceImplementation implements LogServiceInterface {
 
         Log log = Log.builder()
                 .id(String.valueOf(seq))
+                .created(new Date())
                 .logMessage(data)
                 .build();
+
         repo.save(log);
     }
 

@@ -8,6 +8,7 @@ import com.firisbe.model.DTO.response.MonthlyStatisticsResponse;
 import com.firisbe.model.DTO.response.PaymentResponse;
 import com.firisbe.service.Implementation.CustomerServiceImplementation;
 import com.firisbe.service.Implementation.TransferServiceImplementation;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,7 @@ public class AdminController {
     private final CustomerServiceImplementation service;
     private final TransferServiceImplementation transferService;
 
+    @Operation(description = "31")
     @PutMapping
     public ResponseEntity<GenericResponse<CustomerResponse>> updateCustomer(@RequestBody AdminCustomerUpdateRequest request) {
         return new ResponseEntity<>(service.updateCustomerForAdmin(request), HttpStatus.OK);

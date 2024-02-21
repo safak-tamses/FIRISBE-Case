@@ -28,10 +28,12 @@ public class KafkaConsumerConfig {
         return props;
     }
 
+
     @Bean
     public ConsumerFactory<String, String> consumerFactory() {
         return new DefaultKafkaConsumerFactory<>(consumerConfig());
     }
+
 
     public KafkaListenerContainerFactory<
             ConcurrentMessageListenerContainer<String, String>> factory(

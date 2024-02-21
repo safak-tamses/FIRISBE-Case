@@ -6,22 +6,20 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.Date;
 
 @Data
 @Builder
-@AllArgsConstructor
-@Getter
-@Setter
 @Document(collection = "log")
+@NoArgsConstructor
+@AllArgsConstructor
 public class Log {
     @Id
     private String id;
 
-    @CreatedDate
-    private OffsetDateTime created;
+    private Date created;
 
-    @LastModifiedDate
-    private OffsetDateTime updated;
     private String logMessage;
 }
