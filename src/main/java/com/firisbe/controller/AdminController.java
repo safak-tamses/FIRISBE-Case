@@ -86,4 +86,31 @@ public class AdminController {
         return new ResponseEntity<>(service.monthlyStatisticsForAdmin(id, monthOffset), HttpStatus.OK);
     }
 
+    @GetMapping("/payment/find-by-customer-id/{customerId}")
+    @Operation(summary = "Read all payment information by customer id", description = "Read all payment information by customer id", tags = {"admin-controller"})
+    public ResponseEntity<GenericResponse<List<PaymentResponse>>> readAllPaymentForAdminByCustomerId(@PathVariable("customerId") Long customerId) {
+        return new ResponseEntity<>(transferService.readAllPaymentForAdminByCustomerId(customerId), HttpStatus.OK);
+    }
+
+
+    @GetMapping("/payment/find-by-card-number/{cardNumber}")
+    @Operation(summary = "Read all payment information by card number", description = "Read all payment information by card number", tags = {"admin-controller"})
+    public ResponseEntity<GenericResponse<List<PaymentResponse>>> readAllPaymentForAdminByCardNumber(@PathVariable("cardNumber") String cardNumber) {
+        return new ResponseEntity<>(transferService.readAllPaymentForAdminByCardNumber(cardNumber), HttpStatus.OK);
+    }
+
+
+    @GetMapping("/payment/find-by-customer-name/{customerName}")
+    @Operation(summary = "Read all payment information by customer name", description = "Read all payment information by customer name", tags = {"admin-controller"})
+    public ResponseEntity<GenericResponse<List<PaymentResponse>>> readAllPaymentForAdminByCustomerName(@PathVariable("customerName") String customerName) {
+        return new ResponseEntity<>(transferService.readAllPaymentForAdminByCustomerName(customerName), HttpStatus.OK);
+    }
+
+
+    @GetMapping("/payment/find-all-with-date-interval")
+    @Operation(summary = "Read all payment information with date interval", description = "Read all payment information with date interval: startDate = , how many months ago from now || endDate = how many months until now", tags = {"admin-controller"})
+    public ResponseEntity<GenericResponse<List<PaymentResponse>>> readAllPaymentForAdminWithDateInterval(@RequestParam("startDate") Integer startDate, @RequestParam("endDate") Integer endDate) {
+        return new ResponseEntity<>(transferService.readAllPaymentForAdminWithDateInterval(startDate, endDate), HttpStatus.OK);
+    }
+
 }

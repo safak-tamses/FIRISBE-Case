@@ -1,6 +1,7 @@
 package com.firisbe.service.Implementation;
 
 import com.firisbe.aspect.GenericResponse;
+import com.firisbe.aspect.encryption.Encryption;
 import com.firisbe.error.CustomerNotFoundException;
 import com.firisbe.error.PaymentFailedException;
 import com.firisbe.error.TransferNotFoundException;
@@ -14,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
 
 import java.math.BigDecimal;
@@ -40,11 +40,13 @@ class TransferServiceImplementationTest {
 
     @Mock
     private KafkaTemplate<String, String> kafkaTemplate;
+    @Mock
+    private Encryption encryption;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        transferService = new TransferServiceImplementation(transferRepository, customerService, kafkaTemplate);
+        transferService = new TransferServiceImplementation(transferRepository, customerService, kafkaTemplate, encryption);
     }
 
     @AfterEach
@@ -177,9 +179,7 @@ class TransferServiceImplementationTest {
         when(customerService.findCustomerToToken(token)).thenReturn(null);
 
         // Act & Assert
-        assertThrows(CustomerNotFoundException.class, () -> {
-            transferService.readPaymentForCustomer(token, transferId);
-        });
+        assertThrows(CustomerNotFoundException.class, () -> transferService.readPaymentForCustomer(token, transferId));
         verify(kafkaTemplate, times(1)).send(eq("error_logs"), contains("CustomerNotFoundException"));
     }
 
@@ -191,9 +191,7 @@ class TransferServiceImplementationTest {
         when(transferRepository.findById(transferId)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(TransferNotFoundException.class, () -> {
-            transferService.readPaymentForCustomer(token, transferId);
-        });
+        assertThrows(TransferNotFoundException.class, () -> transferService.readPaymentForCustomer(token, transferId));
         verify(kafkaTemplate, times(1)).send(eq("error_logs"), contains("TransferNotFoundException"));
     }
 
@@ -589,9 +587,7 @@ class TransferServiceImplementationTest {
         when(transferRepository.findById(transferId)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(TransferNotFoundException.class, () -> {
-            transferService.readPaymentForAdmin(transferId);
-        });
+        assertThrows(TransferNotFoundException.class, () -> transferService.readPaymentForAdmin(transferId));
         verify(kafkaTemplate, times(1)).send(eq("error_logs"), contains("TransferNotFoundException"));
     }
 
@@ -624,9 +620,7 @@ class TransferServiceImplementationTest {
         when(transferRepository.findAll()).thenReturn(transfers);
 
         // Act & Assert
-        TransferNotFoundException exception = assertThrows(TransferNotFoundException.class, () -> {
-            transferService.readAllPaymentForAdmin();
-        });
+        TransferNotFoundException exception = assertThrows(TransferNotFoundException.class, () -> transferService.readAllPaymentForAdmin());
 
         // Verify Kafka template with the correct expected message
         verify(kafkaTemplate).send(eq("error_logs"), contains("TransferNotFoundException: "));
@@ -679,16 +673,13 @@ class TransferServiceImplementationTest {
         verify(kafkaTemplate).send(eq("payment_log"), eq("Transfers listed successfully"));
     }
 
-
     @Test
     void testReadAllPaymentForAdmin_WhenNoTransfersExistX() {
         List<Transfer> transfers = Collections.emptyList();
         when(transferRepository.findAll()).thenReturn(transfers);
 
         // Act & Assert
-        TransferNotFoundException exception = assertThrows(TransferNotFoundException.class, () -> {
-            transferService.readAllPaymentForAdmin(1);
-        });
+        TransferNotFoundException exception = assertThrows(TransferNotFoundException.class, () -> transferService.readAllPaymentForAdmin(1));
         // Additional assertions can be made here if needed
         assertNotNull(exception);
 
@@ -696,6 +687,7 @@ class TransferServiceImplementationTest {
         verify(kafkaTemplate).send(eq("error_logs"), contains("TransferNotFoundException: "));
 
     }
+
 
 
 }

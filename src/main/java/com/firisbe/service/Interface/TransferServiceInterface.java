@@ -29,6 +29,15 @@ public interface TransferServiceInterface {
     GenericResponse<PaymentResponse> readPaymentForAdmin(Long id);
 
     GenericResponse<List<PaymentResponse>> readAllPaymentForAdmin();
+
     GenericResponse<List<PaymentResponse>> readAllPaymentForAdmin(int monthOffset);
+
+    GenericResponse<List<PaymentResponse>> readAllPaymentForAdminByCustomerId(Long customerId);
+
+    GenericResponse<List<PaymentResponse>> readAllPaymentForAdminByCardNumber(String cardNumber);
+
+    GenericResponse<List<PaymentResponse>> readAllPaymentForAdminByCustomerName(String customerName);
+
+    GenericResponse<List<PaymentResponse>> readAllPaymentForAdminWithDateInterval(int startDate, int endDate);
 
 }
