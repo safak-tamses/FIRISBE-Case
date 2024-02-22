@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 @Builder
 @Getter
 @Setter
-@Data
 public class Transfer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
