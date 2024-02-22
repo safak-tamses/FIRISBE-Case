@@ -10,6 +10,8 @@ A Docker container is created to accommodate all project dependencies. Access to
 
 The project's unit tests are completed using the JUnit library. Additionally, to access the project's endpoints, you can simply double-click the "Swagger UI.html" file located in the root directory, and navigate to the Swagger endpoints with their respective descriptions provided.
 
+The project employs the latest version of Spring Security, ensuring that all endpoints operate based on role-based access control. Currently, there are two available roles within the system. When a customer registers, they are registered with the "user" role. Furthermore, upon project initialization, a one-time creation of an admin account is initiated. The login credentials for this account are as follows: Username: admin@admin.com Password: admin
+
 ## Requirements
 
 - [Java Development Kit (JDK)](https://www.oracle.com/java/technologies/javase-downloads.html) (for the Backend)
