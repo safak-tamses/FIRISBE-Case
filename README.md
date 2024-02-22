@@ -8,7 +8,7 @@ To reflect real-life transaction scenarios in the payment system, transfer trans
 
 A Docker container is created to accommodate all project dependencies. Access to the container is available through the docker-compose.yml file located in the root directory. To utilize it, execute the "docker compose up -d" command from the directory containing the file.
 
-The project's unit tests are completed using the JUnit library. Additionally, to access the project's endpoints, you can simply double-click the "Swagger UI.html" file located in the root directory, and navigate to the Swagger endpoints with their respective descriptions provided.
+The project's unit tests are completed using the JUnit library. Additionally, to access the project's endpoints, you can simply double-click the "Swagger UI.html" file located in the root directory, and navigate to the Swagger endpoints with their respective descriptions provided. To measure the coverage levels of the tests, you can run a test class in coverage mode located within the test directory.
 
 The project employs the latest version of Spring Security, ensuring that all endpoints operate based on role-based access control. Currently, there are two available roles within the system. When a customer registers, they are registered with the "user" role. Furthermore, upon project initialization, a one-time creation of an admin account is initiated. The login credentials for this account are as follows: Username: "admin@admin.com" Password: "admin"
 
