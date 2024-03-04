@@ -1,4 +1,4 @@
-# FIRISBE - Java Backend Developer - Test Case:
+# Online payment service example with spring boot :
 
 This project comprises a Spring Boot-based backend application that simulates an online payment system. The project fulfills the requirements outlined in the given case.
 
